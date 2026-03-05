@@ -48,4 +48,85 @@ def normalize_feishu_md(text: str) -> str:
         return text
     # Ensure newline before code fence so Feishu parses it
     text = re.sub(r"([^\n])(```)", r"\1\n\2", text)
+    # Convert markdown tables to aligned text (Feishu doesn't support markdown tables)
+    text = markdown_table_to_text(text)
     return text
+
+
+def markdown_table_to_text(text: str) -> str:
+    """
+    Convert markdown tables to aligned plain text for Feishu compatibility.
+
+    Example input:
+        | Header1 | Header2 |
+        |---------|---------|
+        | Cell1   | Cell2   |
+
+    Example output:
+        Header1    Header2
+        --------   --------
+        Cell1      Cell2
+    """
+    lines = text.split("\n")
+    result = []
+    i = 0
+
+    while i < len(lines):
+        line = lines[i]
+
+        # Detect table start: line contains | and next line also contains |
+        is_table_start = False
+        if "|" in line and i + 1 < len(lines) and "|" in lines[i + 1]:
+            next_line = lines[i + 1].strip()
+            # Check if next line is separator (contains ---, :--, :-:, --:)
+            if re.match(r"^\|?[\s:-]*\|[\s:-]*\|", next_line):
+                is_table_start = True
+
+        if is_table_start:
+            table_lines = []
+
+            # Collect table rows, advancing 'i' as we go
+            while i < len(lines) and "|" in lines[i]:
+                row = lines[i].strip()
+                # Remove leading/trailing |
+                if row.startswith("|"):
+                    row = row[1:]
+                if row.endswith("|"):
+                    row = row[:-1]
+                # Skip separator line (contains only -, :, |)
+                if re.match(r"^[\s|:-]+$", row):
+                    i += 1
+                    continue
+                if row:  # Skip empty rows
+                    table_lines.append([cell.strip() for cell in row.split("|")])
+                i += 1
+
+            # Convert to aligned text
+            if table_lines:
+                # Calculate column widths robustly (handle rows with varying lengths)
+                num_cols = max(len(r) for r in table_lines) if table_lines else 0
+                if num_cols > 0:
+                    col_widths = []
+                    for col_idx in range(num_cols):
+                        max_width = max(
+                            len(row[col_idx]) if col_idx < len(row) else 0
+                            for row in table_lines
+                        )
+                        col_widths.append(max_width)
+
+                    # Format each row
+                    for row in table_lines:
+                        formatted_cells = []
+                        for col_idx, cell in enumerate(row):
+                            # Handle rows with fewer columns than max
+                            if col_idx < len(row):
+                                padded = cell.ljust(col_widths[col_idx])
+                                formatted_cells.append(padded)
+                        result.append("  ".join(formatted_cells))
+            # After processing a table, the outer loop continues with the new 'i'
+        else:
+            # Not a table, add line as-is
+            result.append(line)
+            i += 1
+
+    return "\n".join(result)
