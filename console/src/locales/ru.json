@@ -336,7 +336,11 @@
     "wecomSdkLoadFailed": "Не удалось загрузить WeCom SDK",
     "filterAll": "Все",
     "builtin": "Встроенные",
-    "custom": "Пользовательские"
+    "custom": "Пользовательские",
+    "feishuRegion": "Регион",
+    "feishuRegionTooltip": "Выберите Feishu для Китая или Lark для международного использования",
+    "feishuChina": "Feishu (Китай)",
+    "feishuInternational": "Lark (Международный)"
   },
   "sessions": {
     "title": "Сессии",
@@ -826,6 +830,25 @@
     "logoutSuccess": "Вы успешно вышли",
     "sessionExpired": "Сессия истекла, пожалуйста, войдите снова",
     "unauthorized": "Не авторизован, пожалуйста, войдите"
+  },
+  "account": {
+    "title": "Управление аккаунтом",
+    "currentPassword": "Текущий пароль",
+    "currentPasswordRequired": "Пожалуйста, введите текущий пароль",
+    "newUsername": "Новое имя пользователя",
+    "newUsernamePlaceholder": "Оставьте пустым, чтобы не менять",
+    "newPassword": "Новый пароль",
+    "newPasswordPlaceholder": "Оставьте пустым, чтобы не менять",
+    "confirmPassword": "Подтвердите новый пароль",
+    "confirmPasswordPlaceholder": "Введите новый пароль ещё раз",
+    "passwordMismatch": "Пароли не совпадают",
+    "save": "Сохранить изменения",
+    "updateSuccess": "Аккаунт успешно обновлён",
+    "updateFailed": "Не удалось обновить аккаунт",
+    "wrongPassword": "Текущий пароль неверен",
+    "nothingToUpdate": "Пожалуйста, введите новое имя пользователя или пароль",
+    "passwordEmpty": "Пароль не может быть пустым",
+    "usernameEmpty": "Имя пользователя не может быть пустым"
   },
   "voiceTranscription": {
     "title": "Транскрипция голоса",
