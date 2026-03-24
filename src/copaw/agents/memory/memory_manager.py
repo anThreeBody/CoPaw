@@ -227,7 +227,7 @@ class MemoryManager(ReMeLight):
             messages=messages,
             as_llm=self.chat_model,
             as_llm_formatter=self.formatter,
-            token_counter=token_counter,
+            as_token_counter=token_counter,
             language=agent_config.language,
             max_input_length=agent_config.running.max_input_length,
             compact_ratio=agent_config.running.memory_compact_ratio,
@@ -297,7 +297,7 @@ class MemoryManager(ReMeLight):
             messages=messages,
             as_llm=self.chat_model,
             as_llm_formatter=self.formatter,
-            token_counter=token_counter,
+            as_token_counter=token_counter,
             toolkit=self.summary_toolkit,
             language=agent_config.language,
             max_input_length=agent_config.running.max_input_length,
@@ -355,5 +355,5 @@ class MemoryManager(ReMeLight):
         token_counter = get_copaw_token_counter(agent_config)
 
         return super().get_in_memory_memory(
-            token_counter=token_counter,
+            as_token_counter=token_counter,
         )
