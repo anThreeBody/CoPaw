@@ -24,6 +24,10 @@ from .gemini_provider import GeminiProvider
 from .ollama_provider import OllamaProvider
 from .openai_provider import OpenAIProvider
 from .lmstudio_provider import LMStudioProvider
+from .openclaw_provider import (
+    OpenClawAnthropicProvider,
+    OpenClawOpenAIProvider,
+)
 from .provider import (
     ModelInfo,
     Provider,
@@ -38,6 +42,7 @@ from ..security.secret_store import (
 )
 
 logger = logging.getLogger(__name__)
+
 
 # -------------------------------------------------------
 # Built-in provider definitions and their default models.
@@ -468,166 +473,6 @@ DEEPSEEK_MODELS: List[ModelInfo] = [
         supports_video=False,
         probe_source="documentation",
     ),
-    ModelInfo(
-        id="deepseek-v4-flash",
-        name="DeepSeek V4 Flash",
-        supports_image=False,
-        supports_video=False,
-        probe_source="documentation",
-    ),
-    ModelInfo(
-        id="deepseek-v4-pro",
-        name="DeepSeek V4 Pro",
-        supports_image=False,
-        supports_video=False,
-        probe_source="documentation",
-    ),
-]
-
-VOLCENGINE_MODELS: List[ModelInfo] = [
-    ModelInfo(
-        id="Doubao-Seed-2.0-Code",
-        name="Doubao-Seed-2.0-Code",
-        supports_image=False,
-        supports_video=False,
-        probe_source="documentation",
-    ),
-    ModelInfo(
-        id="Doubao-Seed-2.0-pro",
-        name="Doubao-Seed-2.0-pro",
-        supports_image=False,
-        supports_video=False,
-        probe_source="documentation",
-    ),
-    ModelInfo(
-        id="Doubao-Seed-2.0-lite",
-        name="Doubao-Seed-2.0-lite",
-        supports_image=False,
-        supports_video=False,
-        probe_source="documentation",
-    ),
-    ModelInfo(
-        id="Doubao-Seed-Code",
-        name="Doubao-Seed-Code",
-        supports_image=False,
-        supports_video=False,
-        probe_source="documentation",
-    ),
-    ModelInfo(
-        id="GLM-5.1",
-        name="GLM-5.1",
-        supports_image=False,
-        supports_video=False,
-        probe_source="documentation",
-    ),
-    ModelInfo(
-        id="MiniMax-M2.7",
-        name="MiniMax-M2.7",
-        supports_image=False,
-        supports_video=False,
-        probe_source="documentation",
-    ),
-    ModelInfo(
-        id="Kimi-K2.6",
-        name="Kimi-K2.6",
-        supports_image=False,
-        supports_video=False,
-        probe_source="documentation",
-    ),
-    ModelInfo(
-        id="Kimi-K2.5",
-        name="Kimi-K2.5",
-        supports_image=False,
-        supports_video=False,
-        probe_source="documentation",
-    ),
-    ModelInfo(
-        id="GLM-4.7",
-        name="GLM-4.7",
-        supports_image=False,
-        supports_video=False,
-        probe_source="documentation",
-    ),
-    ModelInfo(
-        id="DeepSeek-V3.2",
-        name="DeepSeek-V3.2",
-        supports_image=False,
-        supports_video=False,
-        probe_source="documentation",
-    ),
-]
-
-VOLCENGINE_CODINGPLAN_MODELS: List[ModelInfo] = [
-    ModelInfo(
-        id="Doubao-Seed-2.0-Code",
-        name="Doubao-Seed-2.0-Code",
-        supports_image=False,
-        supports_video=False,
-        probe_source="documentation",
-    ),
-    ModelInfo(
-        id="Doubao-Seed-2.0-pro",
-        name="Doubao-Seed-2.0-pro",
-        supports_image=False,
-        supports_video=False,
-        probe_source="documentation",
-    ),
-    ModelInfo(
-        id="Doubao-Seed-2.0-lite",
-        name="Doubao-Seed-2.0-lite",
-        supports_image=False,
-        supports_video=False,
-        probe_source="documentation",
-    ),
-    ModelInfo(
-        id="Doubao-Seed-Code",
-        name="Doubao-Seed-Code",
-        supports_image=False,
-        supports_video=False,
-        probe_source="documentation",
-    ),
-    ModelInfo(
-        id="GLM-5.1",
-        name="GLM-5.1",
-        supports_image=False,
-        supports_video=False,
-        probe_source="documentation",
-    ),
-    ModelInfo(
-        id="MiniMax-M2.7",
-        name="MiniMax-M2.7",
-        supports_image=False,
-        supports_video=False,
-        probe_source="documentation",
-    ),
-    ModelInfo(
-        id="Kimi-K2.6",
-        name="Kimi-K2.6",
-        supports_image=False,
-        supports_video=False,
-        probe_source="documentation",
-    ),
-    ModelInfo(
-        id="Kimi-K2.5",
-        name="Kimi-K2.5",
-        supports_image=False,
-        supports_video=False,
-        probe_source="documentation",
-    ),
-    ModelInfo(
-        id="GLM-4.7",
-        name="GLM-4.7",
-        supports_image=False,
-        supports_video=False,
-        probe_source="documentation",
-    ),
-    ModelInfo(
-        id="DeepSeek-V3.2",
-        name="DeepSeek-V3.2",
-        supports_image=False,
-        supports_video=False,
-        probe_source="documentation",
-    ),
 ]
 
 ANTHROPIC_MODELS: List[ModelInfo] = []
@@ -943,23 +788,122 @@ PROVIDER_SILICONFLOW_INTL = OpenAIProvider(
     require_api_key=True,
 )
 
-PROVIDER_VOLCENGINE_CN = OpenAIProvider(
-    id="volcengine-cn",
-    name="Volcano Engine",
-    base_url="https://ark.cn-beijing.volces.com/api/v3",
-    api_key_prefix="",
-    models=VOLCENGINE_MODELS,
+OPENCLAW_OPENAI_MODELS: List[ModelInfo] = [
+    ModelInfo(
+        id="glm-5-openclaw",
+        name="GLM-5 OpenClaw",
+        supports_image=False,
+        supports_video=False,
+        probe_source="documentation",
+    ),
+    ModelInfo(
+        id="deepseek-v3.1",
+        name="DeepSeek V3.1",
+        supports_image=False,
+        supports_video=False,
+        probe_source="documentation",
+    ),
+    ModelInfo(
+        id="deepseek-v3.2",
+        name="DeepSeek V3.2",
+        supports_image=False,
+        supports_video=False,
+        probe_source="documentation",
+    ),
+    ModelInfo(
+        id="glm-4.7-internal",
+        name="GLM-4.7 Internal",
+        supports_image=True,
+        supports_video=False,
+        probe_source="documentation",
+    ),
+    ModelInfo(
+        id="kimi-k2.6",
+        name="Kimi K2.6",
+        supports_image=True,
+        supports_video=False,
+        probe_source="documentation",
+    ),
+    ModelInfo(
+        id="MiniMax-M2.7",
+        name="MiniMax M2.7",
+        supports_image=True,
+        supports_video=False,
+        probe_source="documentation",
+    ),
+    ModelInfo(
+        id="MiniMax-M2.5",
+        name="MiniMax M2.5",
+        supports_image=False,
+        supports_video=False,
+        probe_source="documentation",
+    ),
+    ModelInfo(
+        id="MiniMax-M2.5-internal",
+        name="MiniMax M2.5 Internal",
+        supports_image=False,
+        supports_video=False,
+        probe_source="documentation",
+    ),
+    ModelInfo(
+        id="GLM-5",
+        name="GLM-5",
+        supports_image=False,
+        supports_video=False,
+        probe_source="documentation",
+    ),
+    ModelInfo(
+        id="glm-5.1",
+        name="GLM-5.1",
+        supports_image=False,
+        supports_video=False,
+        probe_source="documentation",
+    ),
+]
+
+OPENCLAW_ANTHROPIC_MODELS: List[ModelInfo] = [
+    ModelInfo(
+        id="Claude Sonnet 4.6",
+        name="Claude Sonnet 4.6",
+        supports_image=True,
+        supports_video=False,
+        probe_source="documentation",
+    ),
+    ModelInfo(
+        id="Claude Sonnet 4.5",
+        name="Claude Sonnet 4.5",
+        supports_image=True,
+        supports_video=False,
+        probe_source="documentation",
+    ),
+    ModelInfo(
+        id="Claude Haiku 4.5",
+        name="Claude Haiku 4.5",
+        supports_image=True,
+        supports_video=False,
+        probe_source="documentation",
+    ),
+]
+
+PROVIDER_OPENCLAW_OPENAI = OpenClawOpenAIProvider(
+    id="openclaw-openai",
+    name="OpenClaw (OpenAI)",
+    base_url="https://oneapi-comate.baidu-int.com/v1",
+    api_key_prefix="sk-",
+    models=OPENCLAW_OPENAI_MODELS,
     freeze_url=True,
+    support_connection_check=False,
 )
 
-PROVIDER_VOLCENGINE_CN_CODINGPLAN = OpenAIProvider(
-    id="volcengine-cn-codingplan",
-    name="Volcano Engine Coding Plan",
-    base_url="https://ark.cn-beijing.volces.com/api/coding/v3",
-    api_key_prefix="",
-    models=VOLCENGINE_CODINGPLAN_MODELS,
-    support_connection_check=False,
+PROVIDER_OPENCLAW_ANTHROPIC = OpenClawAnthropicProvider(
+    id="openclaw-anthropic",
+    name="OpenClaw (Claude)",
+    base_url="https://oneapi-comate.baidu-int.com/v1",
+    api_key_prefix="sk-",
+    models=OPENCLAW_ANTHROPIC_MODELS,
+    chat_model="AnthropicChatModel",
     freeze_url=True,
+    support_connection_check=False,
 )
 
 
@@ -1029,8 +973,8 @@ class ProviderManager:  # pylint: disable=too-many-public-methods
         self._add_builtin(PROVIDER_ZHIPU_INTL_CODINGPLAN)
         self._add_builtin(PROVIDER_SILICONFLOW_CN)
         self._add_builtin(PROVIDER_SILICONFLOW_INTL)
-        self._add_builtin(PROVIDER_VOLCENGINE_CN)
-        self._add_builtin(PROVIDER_VOLCENGINE_CN_CODINGPLAN)
+        self._add_builtin(PROVIDER_OPENCLAW_OPENAI)
+        self._add_builtin(PROVIDER_OPENCLAW_ANTHROPIC)
 
     def _add_builtin(self, provider: Provider):
         self.builtin_providers[provider.id] = provider
@@ -1297,15 +1241,7 @@ class ProviderManager:  # pylint: disable=too-many-public-methods
             raise ProviderError(
                 message=f"Provider '{provider_id}' not found.",
             )
-        added, error_message = await provider.add_model(model_info)
-        if not added:
-            raise ProviderError(
-                message=error_message,
-                details={
-                    "provider_id": provider_id,
-                    "model_id": model_info.id,
-                },
-            )
+        await provider.add_model(model_info)
 
         # Save provider config to appropriate location
         is_plugin = provider_id in self.plugin_providers
@@ -1768,27 +1704,14 @@ class ProviderManager:  # pylint: disable=too-many-public-methods
                 if not builtin.freeze_url:
                     builtin.base_url = provider.base_url
                 builtin.api_key = provider.api_key
-                builtin_model_ids = {m.id for m in builtin.models}
-                builtin.extra_models = [
-                    m
-                    for m in provider.extra_models
-                    if m.id not in builtin_model_ids
-                ]
+                builtin.extra_models = provider.extra_models
                 builtin.generate_kwargs.update(provider.generate_kwargs)
-                # Restore per-model generate_kwargs for built-in models.
-                # Collect from both stored built-in models and promoted
-                # extra_models (models that were user-added but are now
-                # part of the built-in list).
-                stored_model_kwargs: dict = {}
-                for m in provider.models:
-                    if m.generate_kwargs:
-                        stored_model_kwargs[m.id] = m.generate_kwargs
-                for m in provider.extra_models:
-                    if m.id in builtin_model_ids and m.generate_kwargs:
-                        stored_model_kwargs.setdefault(
-                            m.id,
-                            m.generate_kwargs,
-                        )
+                # Restore per-model generate_kwargs for built-in models
+                stored_model_kwargs = {
+                    m.id: m.generate_kwargs
+                    for m in provider.models
+                    if m.generate_kwargs
+                }
                 if stored_model_kwargs:
                     for model in builtin.models:
                         if model.id in stored_model_kwargs:

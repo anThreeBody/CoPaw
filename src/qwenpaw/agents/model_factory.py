@@ -466,16 +466,25 @@ def _get_formatter_for_chat_model(
 ) -> Type[FormatterBase]:
     """Get the appropriate formatter class for a chat model.
 
+    Checks exact match first, then falls back to subclass relationships
+    so that dynamically-created subclasses (e.g. ``_OpenClawAnthropicChatModel``)
+    inherit the correct formatter from their base class.
+
     Args:
         chat_model_class: The chat model class
 
     Returns:
         Corresponding formatter class, defaults to OpenAIChatFormatter
     """
-    return _CHAT_MODEL_FORMATTER_MAP.get(
-        chat_model_class,
-        OpenAIChatFormatter,
-    )
+    if chat_model_class in _CHAT_MODEL_FORMATTER_MAP:
+        return _CHAT_MODEL_FORMATTER_MAP[chat_model_class]
+    for model_cls, formatter_cls in _CHAT_MODEL_FORMATTER_MAP.items():
+        try:
+            if issubclass(chat_model_class, model_cls):
+                return formatter_cls
+        except TypeError:
+            continue
+    return OpenAIChatFormatter
 
 
 def _substitute_video_blocks(
