@@ -321,6 +321,190 @@ def _block_to_dict(block: Any) -> dict:
         return block.model_dump()
     return dict(block) if hasattr(block, "__iter__") else {"type": "unknown"}
 
+def _format_anthropic_output_items(
+    output: list,
+    seen_media: set[str] | None = None,
+) -> list:
+    """Format a list of tool_result output blocks for Anthropic API,
+    converting image, video, and file blocks as needed.
+
+    When *seen_media* is provided, media blocks whose source has already
+    been encoded in a preceding top-level block are replaced with a
+    lightweight text placeholder to avoid duplicating large base64 data.
+    """
+    result: list[dict] = []
+    for item in output:
+        item_type = item.get("type")
+
+        if item_type == "file":
+            # Anthropic tool_result content only supports 'text' and 'image';
+            # convert file blocks to a readable text placeholder so the
+            # conversation history stays intact without triggering a 400 error.
+            source = item.get("source", {})
+            file_url = source.get("url", "")
+            filename = (
+                item.get("filename")
+                or file_url.rsplit("/", 1)[-1]
+                or "unknown"
+            )
+            readable_path = file_url.removeprefix("file://")
+            result.append(
+                {
+                    "type": "text",
+                    "text": f"File '{filename}' is available at:"
+                    f" {readable_path}",
+                },
+            )
+            continue
+
+        if item_type not in ("image", "video"):
+            result.append(item)
+            continue
+
+        key = _media_source_key(item)
+        if key and seen_media is not None and key in seen_media:
+            result.append(
+                {
+                    "type": "text",
+                    "text": (
+                        f"[{item['type'].title()} omitted — same "
+                        f"{item['type']} already visible above]"
+                    ),
+                },
+            )
+        else:
+            result.append(_format_anthropic_media_block(item))
+            if key and seen_media is not None:
+                seen_media.add(key)
+
+    return result
+
+
+# TODO: remove after agentscope anthropic formatter updated
+def _format_anthropic_messages(  # pylint: disable=too-many-branches
+    msgs: list,
+) -> list[dict]:
+    """Format messages for Anthropic API with image/video block support.
+
+    This replaces the default ``AnthropicChatFormatter._format`` so that
+    ``_format_anthropic_media_block`` is applied to both top-level media
+    blocks and media blocks nested inside ``tool_result`` outputs.
+
+    A ``seen_media`` set tracks image/video source paths already encoded
+    in top-level blocks.  When the same media appears inside a
+    ``tool_result`` output (e.g. ``view_image`` called on an
+    already-uploaded photo), it is replaced with a lightweight text
+    placeholder to avoid duplicating large base64 payloads.
+    """
+    messages: list[dict] = []
+    seen_media: set[str] = set()
+    for index, msg in enumerate(msgs):
+        content_blocks: list[dict] = []
+
+        for block in msg.get_content_blocks():
+            typ = block.get("type")
+            if typ in ["thinking", "text"]:
+                content_blocks.append({**block})
+
+            elif typ in ("image", "video"):
+                key = _media_source_key(block)
+                if key:
+                    seen_media.add(key)
+                content_blocks.append(
+                    _format_anthropic_media_block(block),
+                )
+
+            elif typ == "tool_use":
+                content_blocks.append(
+                    {
+                        "id": block.get("id"),
+                        "type": "tool_use",
+                        "name": block.get("name"),
+                        "input": block.get("input", {}),
+                    },
+                )
+
+            elif typ == "tool_result":
+                output = block.get("output")
+                if output is None:
+                    content_value: list = [
+                        {"type": "text", "text": ""},
+                    ]
+                elif isinstance(output, list):
+                    content_value = _format_anthropic_output_items(
+                        output,
+                        seen_media,
+                    )
+                else:
+                    content_value = [
+                        {"type": "text", "text": str(output)},
+                    ]
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "tool_result",
+                                "tool_use_id": block.get("id"),
+                                "content": content_value,
+                            },
+                        ],
+                    },
+                )
+
+        if msg.role == "system" and index != 0:
+            role = "user"
+        else:
+            role = msg.role
+
+        msg_anthropic: dict = {
+            "role": role,
+            "content": content_blocks or "",
+        }
+
+        if msg_anthropic["content"] or msg_anthropic.get(
+            "tool_calls",
+        ):
+            messages.append(msg_anthropic)
+
+    return messages
+
+
+# Mapping from chat model class to formatter class
+_CHAT_MODEL_FORMATTER_MAP: dict[Type[ChatModelBase], Type[FormatterBase]] = {
+    OpenAIChatModel: OpenAIChatFormatter,
+}
+if AnthropicChatModel is not None and AnthropicChatFormatter is not None:
+    _CHAT_MODEL_FORMATTER_MAP[AnthropicChatModel] = AnthropicChatFormatter
+if GeminiChatModel is not None and GeminiChatFormatter is not None:
+    _CHAT_MODEL_FORMATTER_MAP[GeminiChatModel] = GeminiChatFormatter
+
+
+def _get_formatter_for_chat_model(
+    chat_model_class: Type[ChatModelBase],
+) -> Type[FormatterBase]:
+    """Get the appropriate formatter class for a chat model.
+
+    Checks exact match first, then falls back to subclass relationships
+    so that dynamically-created subclasses (e.g. ``_OpenClawAnthropicChatModel``)
+    inherit the correct formatter from their base class.
+
+    Args:
+        chat_model_class: The chat model class
+
+    Returns:
+        Corresponding formatter class, defaults to OpenAIChatFormatter
+    """
+    if chat_model_class in _CHAT_MODEL_FORMATTER_MAP:
+        return _CHAT_MODEL_FORMATTER_MAP[chat_model_class]
+    for model_cls, formatter_cls in _CHAT_MODEL_FORMATTER_MAP.items():
+        try:
+            if issubclass(chat_model_class, model_cls):
+                return formatter_cls
+        except TypeError:
+            continue
+    return OpenAIChatFormatter
+
 
 def _substitute_video_blocks(
     msgs: list,
