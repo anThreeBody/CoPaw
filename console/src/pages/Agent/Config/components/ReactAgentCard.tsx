@@ -21,6 +21,7 @@ import styles from "../index.module.less";
 const LANGUAGE_OPTIONS = [
   { value: "zh", label: "中文" },
   { value: "en", label: "English" },
+  { value: "id", label: "Bahasa Indonesia" },
   { value: "ru", label: "Русский" },
 ];
 
@@ -221,30 +222,6 @@ export function ReactAgentCard({
         message={t("agentConfig.backendRestartWarning")}
         style={{ marginBottom: 16 }}
       />
-
-      <Form.Item
-        label={t("agentConfig.maxContextLength")}
-        name="max_input_length"
-        rules={[
-          {
-            required: true,
-            message: t("agentConfig.maxContextLengthRequired"),
-          },
-          {
-            type: "number",
-            min: 1000,
-            message: t("agentConfig.maxContextLengthMin"),
-          },
-        ]}
-        tooltip={t("agentConfig.maxContextLengthTooltip")}
-      >
-        <InputNumber
-          style={{ width: "100%" }}
-          min={1000}
-          step={1024}
-          placeholder={t("agentConfig.maxContextLengthPlaceholder")}
-        />
-      </Form.Item>
 
       <Form.Item
         label={t("agentConfig.planMode", "Plan Mode")}
