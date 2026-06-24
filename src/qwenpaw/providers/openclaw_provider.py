@@ -153,6 +153,9 @@ class OpenClawOpenAIProvider(Provider):
             )
 
     def get_chat_model_instance(self, model_id: str) -> ChatModelBase:
+        from agentscope.credential._openai import OpenAICredential
+        from agentscope.model import OpenAIChatModel
+
         from .openai_chat_model_compat import OpenAIChatModelCompat
 
         # Strip private keys before forwarding to the model instance.
@@ -161,18 +164,27 @@ class OpenClawOpenAIProvider(Provider):
             for k, v in self.get_effective_generate_kwargs(model_id).items()
             if not k.startswith("_openclaw_")
         }
-        return OpenAIChatModelCompat(
-            model_name=model_id,
-            stream=True,
+
+        credential = OpenAICredential(
+            id=f"qwenpaw-{self.id}",
             api_key=self.api_key,
-            stream_tool_parsing=False,
-            client_kwargs={
-                "base_url": self.base_url,
-                "default_headers": {
-                    "comate_custom_header": self._comate_header(),
-                },
+            base_url=self.base_url,
+        )
+        parameters = OpenAIChatModel.Parameters(
+            max_tokens=gkw.pop("max_tokens", None),
+            temperature=gkw.pop("temperature", None),
+            top_p=gkw.pop("top_p", None),
+        )
+
+        return OpenAIChatModelCompat(
+            credential=credential,
+            model=model_id,
+            parameters=parameters,
+            stream=True,
+            default_headers={
+                "comate_custom_header": self._comate_header(),
             },
-            generate_kwargs=gkw,
+            extra_generate_kwargs=gkw or None,
         )
 
     async def probe_model_multimodal(
@@ -354,49 +366,61 @@ class OpenClawAnthropicProvider(Provider):
             )
 
     def get_chat_model_instance(self, model_id: str) -> ChatModelBase:
+        from agentscope.credential import AnthropicCredential
+        from agentscope.formatter import AnthropicChatFormatter
         from agentscope.model import AnthropicChatModel
 
         base_url = self._anthropic_base_url()
         gkw = self.get_effective_generate_kwargs(model_id)
 
-        class _OpenClawAnthropicChatModel(AnthropicChatModel):
-            """Thin wrapper that normalises messages before sending to Bedrock.
+        max_tokens = gkw.pop("max_tokens", 16384)
+        params_kwargs: dict[str, Any] = {"max_tokens": max_tokens}
+        for key in ("thinking_enable", "thinking_budget"):
+            if key in gkw:
+                params_kwargs[key] = gkw.pop(key)
 
-            Two transformations are applied to every outbound message list:
+        class _BedrockCleaningFormatter(AnthropicChatFormatter):
+            """Formatter that normalises messages before sending to Bedrock.
 
-            1. **Strip thinking blocks** – When OpenClaw routes to AWS Bedrock,
-               Bedrock may auto-enable extended thinking for Claude models.  In
-               multi-turn conversations the returned ``thinking`` content blocks
-               must be passed back with their original ``signature``.  However
-               the signature is frequently absent or empty in the stored history,
-               causing Bedrock to return::
+            Two transformations are applied to the formatted message list:
 
-                   ValidationException: messages.N.content.0.thinking.signature:
-                       Field required
+            1. **Strip thinking blocks** – When OpenClaw routes to AWS
+               Bedrock, Bedrock may auto-enable extended thinking for Claude
+               models.  In multi-turn conversations the returned ``thinking``
+               content blocks must be passed back with their original
+               ``signature``.  However the signature is frequently absent or
+               empty in the stored history, causing Bedrock to return::
+
+                   ValidationException:
+                       messages.N.content.0.thinking.signature: Field required
 
                Since we never explicitly request extended thinking, stripping
                thinking blocks from *history* messages before the API call is
                safe and avoids the validation error.
 
             2. **Convert role="tool" to Anthropic tool_result format** – Some
-               code paths in model_factory produce OpenAI-style messages with
-               ``role: "tool"``.  Bedrock only allows ``"user"`` or
-               ``"assistant"`` roles, so these are converted to the Anthropic
-               ``role: "user"`` + ``type: "tool_result"`` format.
+               code paths produce OpenAI-style messages with ``role: "tool"``.
+               Bedrock only allows ``"user"`` or ``"assistant"`` roles, so
+               these are converted to the Anthropic ``role: "user"`` +
+               ``type: "tool_result"`` format.
             """
 
-            async def __call__(self, messages, **kwargs):  # type: ignore[override]
-                cleaned = _strip_thinking_from_history(messages)
-                cleaned = _normalize_tool_messages_for_bedrock(cleaned)
-                return await super().__call__(cleaned, **kwargs)
+            async def format(self, msgs: list) -> list[dict]:
+                formatted = await super().format(msgs)
+                formatted = _strip_thinking_from_history(formatted)
+                return _normalize_tool_messages_for_bedrock(formatted)
 
-        return _OpenClawAnthropicChatModel(
-            model_name=model_id,
+        credential = AnthropicCredential(
+            api_key=self.api_key or "",
+            base_url=base_url,
+        )
+
+        return AnthropicChatModel(
+            credential=credential,
+            model=model_id,
+            parameters=AnthropicChatModel.Parameters(**params_kwargs),
             stream=True,
-            api_key=self.api_key,
-            stream_tool_parsing=False,
-            client_kwargs={"base_url": base_url},
-            generate_kwargs=gkw,
+            formatter=_BedrockCleaningFormatter(),
         )
 
     async def probe_model_multimodal(
