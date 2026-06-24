@@ -18,7 +18,17 @@ from urllib.parse import unquote, urlparse
 
 from agentscope.formatter import FormatterBase, OpenAIChatFormatter
 from agentscope.message import TextBlock
-from agentscope.model import ChatModelBase
+from agentscope.model import ChatModelBase, OpenAIChatModel
+
+try:
+    from agentscope.model import AnthropicChatModel
+except ImportError:
+    AnthropicChatModel = None
+
+try:
+    from agentscope.model import GeminiChatModel
+except ImportError:
+    GeminiChatModel = None
 
 try:
     from agentscope.formatter import AnthropicChatFormatter
@@ -320,6 +330,7 @@ def _block_to_dict(block: Any) -> dict:
     if hasattr(block, "model_dump"):
         return block.model_dump()
     return dict(block) if hasattr(block, "__iter__") else {"type": "unknown"}
+
 
 def _format_anthropic_output_items(
     output: list,

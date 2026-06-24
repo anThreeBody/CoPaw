@@ -1203,6 +1203,25 @@ PROVIDER_SILICONFLOW_INTL = OpenAIProvider(
     },
 )
 
+PROVIDER_VOLCENGINE_CN = OpenAIProvider(
+    id="volcengine-cn",
+    name="Volcano Engine",
+    base_url="https://ark.cn-beijing.volces.com/api/v3",
+    api_key_prefix="",
+    models=VOLCENGINE_MODELS,
+    freeze_url=True,
+)
+
+PROVIDER_VOLCENGINE_CN_CODINGPLAN = OpenAIProvider(
+    id="volcengine-cn-codingplan",
+    name="Volcano Engine Coding Plan",
+    base_url="https://ark.cn-beijing.volces.com/api/coding/v3",
+    api_key_prefix="",
+    models=VOLCENGINE_CODINGPLAN_MODELS,
+    support_connection_check=False,
+    freeze_url=True,
+)
+
 OPENCLAW_OPENAI_MODELS: List[ModelInfo] = [
     ModelInfo(
         id="glm-5-openclaw",
